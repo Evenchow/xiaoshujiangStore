@@ -26,6 +26,15 @@ https://www.codecademy.com/
 x = y = y*2
 m =+ m 
 
+3.对于自定义函数的定义
+它的语法是这样的。首先是用def这个Python的关键字，后面跟的是函数名，再加一对括号，中间是一个参数，当然我们这边看到参数是可选的，后面再跟一个冒号，下面是它的函数体的代码块。
+
+``` python
+def hello_world():
+	print "hello world"
+```
+
+ 
 
 
 
