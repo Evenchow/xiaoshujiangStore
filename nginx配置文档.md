@@ -204,6 +204,82 @@ worker_processes auto;
 ``` nginxconf
 worker_cpu_affinity 00000001 00000010 00000100 00001000 00010000 00100000 01000000 10000000;
 ```
+==worker_rlimit_nofile==更改worker进程的最大打开文件数限制。如果没设置的话，这个值为操作系统的限制，默认为1024。Socket在Linux中也是一个文件，也受Linux的最大打开文件数限制。在高并发的情况下，如果不进行更改，会出现“too many open files”问题。更改步骤如下：
+①首先在linux系统中将系统文件中的文件数打开限制调高到65535（可根据自己的需求增加或者减少）
+``` linux
+vim /etc/security/limits.conf
+
+在conf文件的末尾加入以下两句话
+* soft nofile 65535
+* hard nofile 65535
+```
+②保存这个文件后，配置是不会马上生效的，需要重启一下。
+
+③在nginx conf文件中加入设置
+``` nginxconf
+worker_rlimit_nofile 65535; 
+```
+### 2.Events设置
+==worker_connections==设置可由一个worker进程同时打开的最大连接数，也就是并发数，默认是1024，如果设置了上面提到的worker_rlimit_nofile，可以根据需求将这个值增大，但需要注意的是不能超过worker_rlimit_nofile的设置值。
+``` nginxconf
+events { 
+        use epoll; 
+        worker_connections 65535; 
+}
+```
+在event模块里还有一个可设置的重要指令。我们都知道nginx的epoll模型是十分出名的，相对于Apache的select模型，epoll的效率高出不少。打个比方来说，select和epoll事件模型的不同。
+select的工作模式好比为一个服务员全程服务客户，流程是这样，服务员在门口等候客人(listen)，客人到了就接待安排的餐桌上(accept)，等着客户点菜(request uri)，去厨房叫师傅下单做菜（磁盘I/O），等待厨房做好（read），然后给客人上菜(send)，整个下来服务员(进程)很多地方是阻塞的。这样客人一多（HTTP请求一多），餐厅只能通过叫更多的服务员来服务（fork进程），但是由于餐厅资源是有限的（CPU），一旦服务员太多管理成本很高（CPU上下文切换），这样就进入一个瓶颈。
+
+再来看看Nginx得怎么处理？餐厅门口挂个门铃（注册epoll模型的listen），一旦有客人（HTTP请求）到达，派一个服务员去接待（accept），之后服务员就去忙其他事情了（比如再去接待客人），等这位客人点好餐就叫服务员（数据到了read()），服务员过来拿走菜单到厨房（磁盘I/O），服务员又做其他事情去了，等厨房做好了菜也喊服务员（磁盘I/O结束），服务员再给客人上菜（send()），厨房做好一个菜就给客人上一个，中间服务员可以去干其他事情。整个过程被切分成很多个阶段，每个阶段都有相应的服务模块。我们想想，这样一旦客人多了，餐厅也能招待更多的人。
 
 
+nginx在Linux平台默认是epoll事件模型,但是内核版本号要高于2.6.18才提供,现在的各大Linux发行版都满足了,如果不满足内核版本,默认的是select事件模型。epoll模型比select模型的效率要高，因此为了以防万一，我们在events里还是申明一下。
+``` nginxconf
+events { 
+        use epoll; 
+}
+```
 
+### 调度算法的选择
+nginx支持5种调度算法，在前面的章节有介绍，自带的有轮询(rr)，轮询权值(weight)，最少链接数（least_conn），还有两种调度算法需要自行安装，分别是fair和url_hash。在高并发的情况，使用fair调度算法能够智能的进行负载均衡，因此建议安装这个模块，[该安装方法亲测可用](https://www.cnblogs.com/ztlsir/p/8945043.html)。
+
+### 4.HTTP常见问题及对应的设置
+**413错误**
+这一般就是上传文件大小超过Nginx配置引起，但是当网站是众包平台这样的网站，上传下载大容量的文件是必要服务，因此我们需要增加==client_max_body_size==的值，默认为1M，一般配合==client_body_buffer_size==使用，该参数用于设置请求主体的缓冲区大小。 如果主体超过缓冲区大小，则完整主体或其一部分将写入临时文件。修改如下：
+
+``` nginxconf
+server {
+		client_max_body_size 20M;
+		client_body_buffer_size 1024k;
+}
+```
+**504错误或者502错误**
+> 504与502都是发生在服务器内部的错误。
+
+502 Bad Gateway：作为网关或者代理工作的服务器尝试执行请求时，从上游服务器接收到无效的响应。
+504 Gateway Time-out的含义是作为网关或者代理工作的服务器尝试执行请求时，未能及时从上游服务器收到响应，简单来说就是网关超时了。
+
+出现这种情况的原因有两种情况：
+①由于Nginx默认的fastcgi进程响应的缓冲区太小造成的， 这将导致fastcgi进程被挂起，如果你的fastcgi服务对这个挂起处理的不好，那么最后就极有可能导致错误（如果用的是uwsgi，那么同理，将fastcgi换成uwsgi）。 主要与以下几个参数有关，特别是前三个超时时间：
+``` nginxconf
+http {
+	uwsgi_connect_timeout 300;
+	uwsgi_send_timeout 300;
+	uwsgi_read_timeout 300;
+	uwsgi_buffer_size 1024k;
+	uwsgi_buffers 16 1024k;
+	uwsgi_busy_buffers_size 2048k;
+	uwsgi_temp_file_write_size 2048k;
+}
+```
+②由于请求实际时间超过了后端被代理的服务器的请求限定时间，导致504。我们可以根据后端服务器实际处理情况，调正后端请求超时时间， proxy_read_timeout默认是60s，可以根据应用进行适量的调整，如下所示：
+``` nginxconf
+server {
+	    proxy_connect_timeout 240;
+		proxy_read_timeout 120;
+		proxy_send_timeout 120;
+}
+```
+
+参考文献：
+- http://www.ttlsa.com/web/analysis-of-site-502-and-504-error/
