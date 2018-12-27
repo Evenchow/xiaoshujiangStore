@@ -34,3 +34,22 @@ with tf.Session() as sess:
 ``` python
 d = tf.linspace(start=0.0, stop=1.0, num=3)
 ```
+
+变量和占位符
+变量是模型的参数，声明变量之后需要初始化变量
+``` python
+my_var = tf.Variable(tf.zeros([2,3]))
+sess = tf.Session()
+initiaize_op = tf.global_variables_initializer() #一次性初始化创建的所有变量
+print(sess.run(my_var))
+```
+占位符仅仅声明数据位置，通过会话的feed_dict参数获得初始化参数，如下：
+``` python
+sess = tf.Session()
+x = tf.placeholder(tf.float32, shape=[2,2])
+#identity返回一个与输入的tensor大小和数值都一样的tensor
+y = tf.identity(x)
+#通过np.random.rand函数可以返回一个或一组服从“0~1”均匀分布的随机样本值
+x_vals = np.random.rand(2,2)
+print(sess.run(y, feed_dict={x:x_vals}))
+```
