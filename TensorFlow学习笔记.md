@@ -58,9 +58,12 @@ print(sess.run(y, feed_dict={x:x_vals}))
 ## Tensorflow进阶
 
 ### 重要的机器学习数学表达和tf表达
-数学公式:：
-$$ H(X) = -\sum p(x_i)log(p(x_i)) $$
+信息熵数学公式:：
+$$ H(X) = -\sum p(x_i)log(p(x_i)) $$  （这是对事件X取了加权平均的结果）
 
 
 交叉熵数学公式：
 $$ H(p,q) = -\sum_{i=1}^np(x_i)log(q(x_i)) $$
+
+sigmoid公式：
+$$ S(x) = \frac{1}{1+e^x} $$
