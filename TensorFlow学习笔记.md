@@ -2,6 +2,7 @@
 title: TensorFlow学习笔记 
 tags: TensorFlow,deepLearning
 grammar_cjkRuby: true
+grammar_mathjax: true
 ---
 
 ## Windows环境下安装TensorFlow
@@ -52,4 +53,16 @@ y = tf.identity(x)
 #通过np.random.rand函数可以返回一个或一组服从“0~1”均匀分布的随机样本值
 x_vals = np.random.rand(2,2)
 print(sess.run(y, feed_dict={x:x_vals}))
+```
+
+## Tensorflow进阶
+
+### 重要的机器学习数学表达和tf表达
+数学公式:：
+H(X)=−∑p(xi)log(p(xi))    (i=1,2,…,n)
+
+交叉熵数学公式：
+```mathjax!
+\Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt\,.
+H(p,q) = -\sum_{i=1}^np(x_i)log(q(x_i))
 ```
