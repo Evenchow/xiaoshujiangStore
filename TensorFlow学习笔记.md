@@ -62,7 +62,4 @@ print(sess.run(y, feed_dict={x:x_vals}))
 H(X)=−∑p(xi)log(p(xi))    (i=1,2,…,n)
 
 交叉熵数学公式：
-```mathjax!
-\Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt\,.
-H(p,q) = -\sum_{i=1}^np(x_i)log(q(x_i))
-```
+$$ H(p,q) = -\sum_{i=1}^np(x_i)log(q(x_i)) $$
