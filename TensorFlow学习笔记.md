@@ -59,7 +59,8 @@ print(sess.run(y, feed_dict={x:x_vals}))
 
 ### 重要的机器学习数学表达和tf表达
 数学公式:：
-H(X)=−∑p(xi)log(p(xi))    (i=1,2,…,n)
+$$ H(X) = -\sum p(x_i)log(p(x_i)) $$
+
 
 交叉熵数学公式：
 $$ H(p,q) = -\sum_{i=1}^np(x_i)log(q(x_i)) $$
