@@ -69,11 +69,28 @@ sigmoid公式：
 $$ S(x) = \frac{1}{1+e^x} $$
 
 正态分布：
-N（μ,σ^2），其中数学期望为μ、方差为σ^2，如N(-1,1)和N(3,1)如图：
+N（μ,σ^2），其中数学期望为μ、方差为$σ^2$，如N(-1,1)如图：
 
 ``` python
 ## 生成数据
+import numpy as np
+import matplotlib.mlab as mlab
+import matplotlib.pyplot as plt
 
+num = 10000
+mu = -1
+sigma = 1
+s1 = np.random.normal(mu, sigma, num)
 
+## 画直方图并生成拟合曲线
+n, bins, patches = plt.hist(s1,bins=50,normed=True) #bins这个参数指定bin(箱子)的个数,也就是总共有几条条状图
+
+y = mlab.normpdf(bins, mu, sigma)  #拟合一条最佳正态分布曲线y
+plt.plot(bins, y, 'r--')  #绘制y的曲线
+plt.xlabel('sepal-length') #绘制x轴
+plt.ylabel('Probability') #绘制y轴
+plt.title(r'Histogram : $\mu=-1$,$\sigma=1$')     #生成标题
+plt.show()
 ```
 
+![enter description here](./images/1552726591405.png)
